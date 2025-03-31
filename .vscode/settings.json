@@ -10,5 +10,7 @@
         "IDF_CCACHE_ENABLE": "1",
         "ESP_ROM_ELF_DIR": "d:\\Apps\\.espressif\\tools\\esp-rom-elfs\\20230320/",
         "IDF_TARGET": "esp32s2"
-    }
+    },
+    "idf.pythonInstallPath": "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3",
+    "idf.port": "/dev/tty.usbserial-1101"
 }
