@@ -108,7 +108,7 @@ void app_main(void)
     configure_btn();
 
     while (1) {
-        ESP_LOGI(TAG, "Guľôčka v jamôčke v potôčiku.");
+        ESP_LOGI(TAG, "Jan Jiri Bauer je hňup");
         if(!gpio_get_level(BTN_GPIO))
         {
             red++;
