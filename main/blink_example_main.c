@@ -21,9 +21,9 @@ static const char *TAG = "hovno";
 #define BLINK_GPIO 45
 #define BTN_GPIO 6
 
-static led_strip_handle_t led_strip;
+void blink_task() {
 
-void configure_led(void) {
+    static led_strip_handle_t led_strip;
 
     ESP_LOGI(TAG, "Jan Jiří Bauer je hňup!");
 
@@ -39,19 +39,9 @@ void configure_led(void) {
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
 
     led_strip_clear(led_strip);
-}
-
-void configure_btn(void) {
 
     gpio_reset_pin(BTN_GPIO);
     gpio_set_direction(BTN_GPIO, GPIO_MODE_INPUT);
-}
-
-
-void app_main(void) {
-
-    configure_led();
-    configure_btn();
 
     while (1) {
         
@@ -62,4 +52,18 @@ void app_main(void) {
         led_strip_clear(led_strip); led_strip_refresh(led_strip);   
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
+
+    vTaskDelete(NULL);
+}
+
+void app_main(void) {
+
+    xTaskCreate(blink_task, "led_blink", 512, NULL, 1, NULL);
+
+    while (1) {
+
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+    }
+
+    vTaskDelete(NULL);
 }
