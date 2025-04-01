@@ -1,12 +1,4 @@
-/* 
-    projekt
-    MPC-DIS
-
-    naprogramovali borci
-    Bc. Martin Kopka
-    Bc. Jan Jiří Bauer
-    Bc. Viktor Cejnek
-*/
+#include "blink.h"
 
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
@@ -15,15 +7,13 @@
 #include "esp_log.h"
 #include "led_strip.h"
 #include "sdkconfig.h"
-
-static const char *TAG = "hovno";
+#include "common.h"
 
 #define BLINK_GPIO 45
-#define BTN_GPIO 6
 
-static led_strip_handle_t led_strip;
+void blink_task() {
 
-void configure_led(void) {
+    static led_strip_handle_t led_strip;
 
     ESP_LOGI(TAG, "Jan Jiří Bauer je hňup!");
 
@@ -39,27 +29,16 @@ void configure_led(void) {
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
 
     led_strip_clear(led_strip);
-}
-
-void configure_btn(void) {
-
-    gpio_reset_pin(BTN_GPIO);
-    gpio_set_direction(BTN_GPIO, GPIO_MODE_INPUT);
-}
-
-
-void app_main(void) {
-
-    configure_led();
-    configure_btn();
 
     while (1) {
         
         led_strip_set_pixel(led_strip, 0, 0, 255, 0);
         led_strip_refresh(led_strip);
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        sleep_ms(500);
         
         led_strip_clear(led_strip); led_strip_refresh(led_strip);   
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        sleep_ms(500);
     }
+
+    vTaskDelete(NULL);
 }
