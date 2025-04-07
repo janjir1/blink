@@ -2,5 +2,4 @@ build/**
 managed_components/**
 dependencies.lock
 .vscode/**
-dependencies.lock
 sdkconfig
