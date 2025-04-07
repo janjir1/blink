@@ -351,7 +351,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_img_top u
     .data_size = 242352,
     .data = img_top_map,
   };
-
+/*
   const lv_img_dsc_t my_image = {
     .header.cf = LV_IMG_CF_RGB565A8,
     .header.always_zero = 0,
@@ -361,3 +361,4 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_img_top u
     .data_size = 242352,
     .data = img_top_map,
   };
+  */
