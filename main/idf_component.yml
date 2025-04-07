@@ -1,2 +1,4 @@
 dependencies:
-  espressif/led_strip: "^2.4.1"
+  esp32_s2_kaluga_kit:
+    version: ^2.0.1
+description: BSP Display and Audio example
