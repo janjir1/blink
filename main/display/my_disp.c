@@ -82,6 +82,7 @@ void disp_set_recording(bool set)
 #define RECT_WIDTH      50
 #define RECT_HEIGHT     30
 
+/*
 void move_image_task(void *pvParameters)
 {
     // Create an image object on the active screen.
@@ -121,6 +122,7 @@ void move_image_task(void *pvParameters)
     // Delete this task.
     vTaskDelete(NULL);
 }
+    */
 
 void move_yellow_rect_task(void *pvParameters)
 {

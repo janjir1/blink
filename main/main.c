@@ -18,6 +18,8 @@
 #include "lvgl.h"
 #include "display/my_disp.h"
 
+#include "display/tubes.h"
+
 #include "lvgl.h"
 #include "bsp/esp-bsp.h"
 
@@ -309,6 +311,8 @@ void app_main(void)
     /* Needed from random RGB LED color generation */
     time_t t;
     srand((unsigned) time(&t));
+
+    spawn_tube(true, 50);
 
     /* Create FreeRTOS tasks and queues */
     // audio_button_q = xQueueCreate(10, sizeof(uint8_t));

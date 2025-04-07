@@ -7,6 +7,10 @@ extern "C" {
 
 #include "lvgl.h"
 
+LV_IMG_DECLARE(img_top);
+
+LV_IMG_DECLARE(img_bottom);
+
 LV_IMG_DECLARE(my_image);
 
 #ifdef __cplusplus

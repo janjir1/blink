@@ -36,4 +36,4 @@ void disp_set_recording(bool set);
 
 void move_yellow_rect_task(void *pvParameters);;
 
-void move_image_task(void *pvParameters);;
+//void move_image_task(void *pvParameters);;
