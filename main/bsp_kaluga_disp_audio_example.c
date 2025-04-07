@@ -21,6 +21,11 @@
 #include "lvgl.h"
 #include "bsp/esp-bsp.h"
 
+#include "blink.h"
+#include "button.h"
+
+
+
 
 /* Buffer for reading/writing to I2S driver. Same length as SPIFFS buffer and I2S buffer, for optimal read/write performance.
    Recording audio data path:
@@ -40,21 +45,10 @@
 
 /* Globals */
 static const char *TAG = "example";
-static button_handle_t audio_button[BSP_BUTTON_NUM] = {};
-static QueueHandle_t audio_button_q = NULL;
-static led_strip_handle_t rgb_led = NULL;
 static i2s_chan_handle_t i2s_tx_chan;
 static i2s_chan_handle_t i2s_rx_chan;
 
-static void btn_handler(void *arg, void *arg2)
-{
-    for (uint8_t i = 0; i < BSP_BUTTON_NUM; i++) {
-        if ((button_handle_t)arg == audio_button[i]) {
-            xQueueSend(audio_button_q, &i, 0);
-            break;
-        }
-    }
-}
+extern QueueHandle_t audio_button_q;
 
 // Very simple WAV header, ignores most fields
 typedef struct __attribute__((packed))
@@ -109,6 +103,7 @@ static esp_err_t spiffs_init(void)
     return ret;
 }
 
+/*
 void move_yellow_rect_task(void *pvParameters)
 {
     // Create a yellow rectangle on the active screen.
@@ -145,7 +140,7 @@ void move_yellow_rect_task(void *pvParameters)
 
     // Delete this task once finished.
     vTaskDelete(NULL);
-}
+}*/
 
 
 static void audio_task(void *arg)
@@ -266,17 +261,10 @@ static void audio_task(void *arg)
             }
             case BSP_BUTTON_SET: {
                 /* Wit each button SET press, toggle RGB led on/off and set random color */
-                static bool rgb_off = false;
-                if (rgb_off) {
-                    led_strip_set_pixel(rgb_led, 0, 0, 0, 0);
-                } else {
-                    led_strip_set_pixel(rgb_led, 0, rand() % 100, rand() % 100, rand() % 100);
-                }
+                
 
-                xTaskCreate(move_yellow_rect_task, "YellowRectTask", 4096, NULL, 5, NULL);
+                //xTaskCreate(move_yellow_rect_task, "YellowRectTask", 4096, NULL, 5, NULL);
 
-                led_strip_refresh(rgb_led);
-                rgb_off = !rgb_off;
                 break;
             }
             case BSP_BUTTON_VOLDOWN: {
@@ -305,40 +293,26 @@ static void audio_task(void *arg)
 }
 
 
-
 void app_main(void)
 {
+
+    button_init();
+    xTaskCreate(blink_task, "led_blink", 2048, NULL, 1, NULL);
+
     /* Init board peripherals */
     bsp_i2c_init(); // Used by ES8311 driver
     ESP_ERROR_CHECK(spiffs_init());
-
-    /* Configure RGB LED */
-    const led_strip_config_t rgb_config = {
-        .strip_gpio_num = BSP_LEDSTRIP_IO,
-        .max_leds = 1,
-    };
-    const led_strip_rmt_config_t rmt_config = {0};
-    led_strip_new_rmt_device(&rgb_config, &rmt_config, &rgb_led);
-    assert(rgb_led != NULL);
-    ESP_ERROR_CHECK(led_strip_clear(rgb_led));
 
     /* Needed from random RGB LED color generation */
     time_t t;
     srand((unsigned) time(&t));
 
     /* Create FreeRTOS tasks and queues */
-    audio_button_q = xQueueCreate(10, sizeof(uint8_t));
-    assert (audio_button_q != NULL);
+    // audio_button_q = xQueueCreate(10, sizeof(uint8_t));
+    // assert (audio_button_q != NULL);
 
     BaseType_t ret = xTaskCreate(audio_task, "audio_task", 4096, NULL, 6, NULL);
     assert(ret == pdPASS);
-
-    /* Init audio buttons */
-    for (int i = 0; i < BSP_BUTTON_NUM; i++) {
-        audio_button[i] = iot_button_create(&bsp_button_config[i]);
-        assert(audio_button[i] != NULL);
-        ESP_ERROR_CHECK(iot_button_register_cb(audio_button[i], BUTTON_PRESS_DOWN, btn_handler, NULL));
-    }
 
     bsp_display_start(); // Start LVGL and LCD driver
     disp_init();         // Create LVGL screen and widgets

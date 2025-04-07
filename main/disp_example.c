@@ -82,6 +82,7 @@ void disp_set_recording(bool set)
 #define RECT_WIDTH      50
 #define RECT_HEIGHT     30
 
+/*
 // Task to move the yellow rectangle from left to right
 void move_yellow_rect_task(void *pvParameters)
 {
@@ -122,3 +123,4 @@ void move_yellow_rect_task(void *pvParameters)
     // Delete this task once finished.
     vTaskDelete(NULL);
 }
+*/
