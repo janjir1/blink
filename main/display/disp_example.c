@@ -8,6 +8,8 @@
 #include "lvgl.h"
 #include "bsp/esp-bsp.h"
 
+#include "display/my_image.h"
+
 static lv_obj_t *recording_checkbox = NULL;
 static lv_obj_t *playing_checkbox = NULL;
 static lv_obj_t *volume_arc = NULL;
@@ -75,27 +77,60 @@ void disp_set_recording(bool set)
     bsp_display_unlock();
 }
 
-// Define screen and rectangle dimensions.
-// Update these values to match your actual display resolution.
 #define SCREEN_WIDTH    320
 #define SCREEN_HEIGHT   240
 #define RECT_WIDTH      50
 #define RECT_HEIGHT     30
 
-/*
-// Task to move the yellow rectangle from left to right
+void move_image_task(void *pvParameters)
+{
+    // Create an image object on the active screen.
+    lv_obj_t *img_obj = lv_img_create(lv_scr_act());
+    
+    // Set the image source to your image descriptor.
+    lv_img_set_src(img_obj, &my_image);
+    
+    // Retrieve the image dimensions.
+    uint16_t img_w = lv_obj_get_width(img_obj);
+    uint16_t img_h = lv_obj_get_height(img_obj);
+    
+    // Position the image at the left edge and center it vertically.
+    int x = 0;
+    int y = (SCREEN_HEIGHT - img_h) / 2;
+    lv_obj_set_pos(img_obj, x, y);
+    
+    // Move the image until its right edge reaches the screen boundary.
+    while (x < (SCREEN_WIDTH - img_w)) {
+        // Lock display for thread-safe LVGL updates.
+        bsp_display_lock(0);
+        lv_obj_set_pos(img_obj, x, y);
+        bsp_display_unlock();
+        
+        // Advance the image position.
+        x += 5;
+        
+        // Delay to control animation speed (50ms delay).
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+    
+    // Optionally, delete the image object once the animation completes.
+    bsp_display_lock(0);
+    lv_obj_del(img_obj);
+    bsp_display_unlock();
+    
+    // Delete this task.
+    vTaskDelete(NULL);
+}
+
 void move_yellow_rect_task(void *pvParameters)
 {
     // Create a yellow rectangle on the active screen.
     lv_obj_t *yellow_rect = lv_obj_create(lv_scr_act());
     lv_obj_set_size(yellow_rect, RECT_WIDTH, RECT_HEIGHT);
 
-    // Set the background color to yellow.
-    // (For LVGL v7, you might use lv_obj_set_style_local_bg_color().
-    // For LVGL v8, you would use lv_obj_set_style_bg_color().)
-    lv_obj_set_style_bg_color(yellow_rect, LV_COLOR_YELLOW, 0);
-    lv_obj_set_style_bg_opa(yellow_rect, LV_OPA_COVER, 0);
-
+    // Set the background color to yellow using LV_COLOR_MAKE and specify LV_PART_MAIN and LV_STATE_DEFAULT.
+    lv_obj_set_style_bg_color(yellow_rect, lv_color_hex(0xFFFF00), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(yellow_rect, LV_OPA_COVER, LV_PART_MAIN);
     // Start at the left edge and center vertically.
     int x = 0;
     int y = (SCREEN_HEIGHT - RECT_HEIGHT) / 2;
@@ -106,7 +141,7 @@ void move_yellow_rect_task(void *pvParameters)
         // Lock display to safely update the LVGL object.
         bsp_display_lock(0);
         lv_obj_set_pos(yellow_rect, x, y);
-        bsp_display_unlock(0);
+        bsp_display_unlock();
 
         // Advance by 5 pixels to the right.
         x += 5;
@@ -118,9 +153,9 @@ void move_yellow_rect_task(void *pvParameters)
     // Optionally, delete the rectangle once the animation completes.
     bsp_display_lock(0);
     lv_obj_del(yellow_rect);
-    bsp_display_unlock(0);
+    bsp_display_unlock();
 
     // Delete this task once finished.
     vTaskDelete(NULL);
 }
-*/
+

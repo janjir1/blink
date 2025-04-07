@@ -33,3 +33,7 @@ void disp_set_playing(bool set);
  * @param[in] set Checkbox state (on/off)
  */
 void disp_set_recording(bool set);
+
+void move_yellow_rect_task(void *pvParameters);;
+
+void move_image_task(void *pvParameters);;
