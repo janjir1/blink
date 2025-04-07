@@ -1,2 +1,5 @@
-idf_component_register(SRCS "bsp_kaluga_disp_audio_example.c" "display/disp_example.c" "display/my_image.c" "button.c" "blink.c"
+idf_component_register(SRCS "main.c"
+                            "display/my_disp.c" "display/my_image.c"
+                            "button/button.c" "blink/blink.c"
+                            "audio/audio.c"
                     INCLUDE_DIRS ".")

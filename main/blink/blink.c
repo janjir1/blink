@@ -1,4 +1,4 @@
-#include "blink.h"
+#include "blink/blink.h"
 
 #include "common.h"
 #include "driver/gpio.h"
@@ -6,11 +6,13 @@
 
 #define BLINK_GPIO 45
 
+static const char *TAG = "example";
+
 void blink_task() {
 
     static led_strip_handle_t led_strip;
 
-    ESP_LOGI(TAG, "Jan Jiří Bauer je hňup!");
+    ESP_LOGI(TAG, "Jan Jiří Bauer je borec!");
 
     led_strip_config_t strip_config = {
         .strip_gpio_num = BLINK_GPIO,

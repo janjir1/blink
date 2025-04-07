@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: CC0-1.0
  */
 
-#include "disp_example.h"
+#include "display/my_disp.h"
 #include "lvgl.h"
 #include "bsp/esp-bsp.h"
 

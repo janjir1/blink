@@ -1,4 +1,4 @@
-#include "button.h"
+#include "button/button.h"
 
 #include "common.h"
 #include "driver/gpio.h"
@@ -12,7 +12,7 @@ static uint32_t key_press_acknowledged = 0;             // bit corresponding to 
 
 
 static void btn_handler(void *arg, void *arg2);
-static void btn_release_handler(void *arg, void *arg2);
+//static void btn_release_handler(void *arg, void *arg2);
 
 void button_init() {
 
@@ -21,7 +21,7 @@ void button_init() {
         audio_button[i] = iot_button_create(&bsp_button_config[i]);
         assert(audio_button[i] != NULL);
         ESP_ERROR_CHECK(iot_button_register_cb(audio_button[i], BUTTON_PRESS_DOWN, btn_handler, NULL));
-        ESP_ERROR_CHECK(iot_button_register_cb(audio_button[i], BUTTON_PRESS_UP, btn_release_handler, NULL));
+        //ESP_ERROR_CHECK(iot_button_register_cb(audio_button[i], BUTTON_PRESS_UP, btn_release_handler, NULL));
     }
 }
 
@@ -52,14 +52,15 @@ static void btn_handler(void *arg, void *arg2)
         }
     }
 }
-
+/*
 static void btn_release_handler(void *arg, void *arg2)
 {
     esp_lo
-    /*for (uint8_t i = 0; i < BSP_BUTTON_NUM; i++) {
+    or (uint8_t i = 0; i < BSP_BUTTON_NUM; i++) {
         if ((button_handle_t)arg == audio_button[i]) {
             xQueueSend(audio_button_q, &i, 0);
             break;
         }
-    }*/
+    }
 }
+*/
