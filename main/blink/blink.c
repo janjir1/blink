@@ -8,6 +8,8 @@
 
 #define BLINK_GPIO 45
 
+//---- FUNCTIONS -------------------------------------------------------------------------------------------------------------------------------------------------
+
 void blink_task() {
 
     static led_strip_handle_t led_strip;
@@ -29,7 +31,7 @@ void blink_task() {
 
     while (1) {
         
-        if (button_is_pressed(BUTTON_REC, false)) led_strip_set_pixel(led_strip, 0, 0, 255, 0);
+        led_strip_set_pixel(led_strip, 0, 0, 255, 0);
         led_strip_refresh(led_strip);
         sleep_ms(500);
         
@@ -40,3 +42,5 @@ void blink_task() {
 
     vTaskDelete(NULL);
 }
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------

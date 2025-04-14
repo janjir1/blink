@@ -1,6 +1,11 @@
 #ifndef _BUTTON_H_
 #define _BUTTON_H_
 
+/*  napsal pan balalář Martin Kopka 
+ *  pro hloupý čínský bazmek
+ *  MPC-DIS 2025
+ */
+
 #include "bsp/esp-bsp.h"
 
 enum button_t {
@@ -15,15 +20,19 @@ enum button_t {
 
 };
 
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 void button_init();
 
 // returns key state. If do_once flag is used, function returns true only first time, key press is registered
 bool button_is_pressed(enum button_t key, bool do_once);
 
-// returns key hold time [ms]
-uint32_t button_get_hold_time(enum button_t key);
+// returns key hold time [us]
+uint64_t button_get_hold_time(enum button_t key);
 
 // returns true if key is pressed and was held for specified ammount of time
-bool button_is_pressed_for_ms(enum button_t key, uint32_t time_ms, bool do_once);
+bool button_is_pressed_for_us(enum button_t key, uint32_t time_us, bool do_once);
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #endif /* _BUTTON_H_ */
