@@ -4,9 +4,9 @@
 #include "driver/gpio.h"
 #include "led_strip.h"
 
-#define BLINK_GPIO 45
+#include "button/button.h"
 
-static const char *TAG = "example";
+#define BLINK_GPIO 45
 
 void blink_task() {
 
@@ -29,11 +29,12 @@ void blink_task() {
 
     while (1) {
         
-        led_strip_set_pixel(led_strip, 0, 0, 255, 0);
+        if (button_is_pressed(BUTTON_REC, false)) led_strip_set_pixel(led_strip, 0, 0, 255, 0);
         led_strip_refresh(led_strip);
         sleep_ms(500);
         
-        led_strip_clear(led_strip); led_strip_refresh(led_strip);   
+        led_strip_clear(led_strip);
+        led_strip_refresh(led_strip);   
         sleep_ms(500);
     }
 

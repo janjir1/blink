@@ -23,12 +23,11 @@
 #include "lvgl.h"
 #include "bsp/esp-bsp.h"
 
+#include "common.h"
 #include "blink/blink.h"
 #include "button/button.h"
 
 #include "audio/audio.h"
-
-static const char *TAG = "example";
 
 
 /* Buffer for reading/writing to I2S driver. Same length as SPIFFS buffer and I2S buffer, for optimal read/write performance.
@@ -306,22 +305,21 @@ void app_main(void)
 
     /* Init board peripherals */
     bsp_i2c_init(); // Used by ES8311 driver
-    ESP_ERROR_CHECK(spiffs_init());
+    spiffs_init();
 
     /* Needed from random RGB LED color generation */
     time_t t;
     srand((unsigned) time(&t));
 
-    spawn_tube(true, 50);
-
     /* Create FreeRTOS tasks and queues */
     // audio_button_q = xQueueCreate(10, sizeof(uint8_t));
     // assert (audio_button_q != NULL);
 
-    BaseType_t ret = xTaskCreate(audio_task, "audio_task", 4096, NULL, 6, NULL);
-    assert(ret == pdPASS);
+    //xTaskCreate(audio_task, "audio_task", 4096, NULL, 6, NULL);
 
     bsp_display_start(); // Start LVGL and LCD driver
-    disp_init();         // Create LVGL screen and widgets
-    disp_set_volume(DEFAULT_VOLUME);
+    //disp_init();         // Create LVGL screen and widgets
+    //disp_set_volume(DEFAULT_VOLUME);
+
+    spawn_tube(true, 50);
 }

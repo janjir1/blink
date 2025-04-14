@@ -8,7 +8,7 @@
 #include "sdkconfig.h"
 #include "esp_log.h"
 
-//#define TAG "hovno"
+static const char TAG[] = "hovno";
 
 static inline void sleep_ms(uint32_t duration_ms) {
 
