@@ -1,7 +1,7 @@
-#include "display/my_disp.h"
+#include "display/tubes_image.h"
 #include "lvgl.h"
 #include "bsp/esp-bsp.h"
-#include "display/my_image.h"
+//#include "display/my_image.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -30,9 +30,11 @@ void move_image_task(void *pvParameters) {
     // Choose the correct image based on the object's "top" flag.
     const lv_img_dsc_t *selected_image = NULL;
     if (obj->top) {
-        selected_image = &img_top;
+        selected_image = &tube_top;
+        obj->y_position += 100;
+
     } else {
-        selected_image = &img_bottom;
+        selected_image = &tube_bottom;
     }
     
     // Set the image source.

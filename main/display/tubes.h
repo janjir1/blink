@@ -18,9 +18,9 @@
 // You may choose to keep this structure private if only used internally.
 typedef struct {
     bool top;             // Flag to determine which image to use.
-    uint8_t y_position;   // Vertical position on the screen.
+    uint16_t y_position;   // Vertical position on the screen.
     uint8_t id;           // Unique identifier.
-    uint8_t x_position;   // Horizontal position on the screen.
+    uint16_t x_position;   // Horizontal position on the screen.
 } tube_t;
 
 /**

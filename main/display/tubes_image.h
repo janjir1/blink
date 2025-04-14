@@ -1,5 +1,5 @@
-#ifndef MY_IMAGE_H
-#define MY_IMAGE_H
+#ifndef TUBES_IMAGE_H
+#define TUBES_IMAGE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -7,9 +7,9 @@ extern "C" {
 
 #include "lvgl.h"
 
-LV_IMG_DECLARE(img_top);
+LV_IMG_DECLARE(tube_top);
 
-LV_IMG_DECLARE(img_bottom);
+LV_IMG_DECLARE(tube_bottom);
 
 //LV_IMG_DECLARE(my_image);
 
@@ -17,4 +17,4 @@ LV_IMG_DECLARE(img_bottom);
 } /* extern "C" */
 #endif
 
-#endif /* MY_IMAGE_H */
+#endif /* TUBES_IMAGE_H */
