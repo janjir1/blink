@@ -16,9 +16,10 @@
 #include "es8311.h"
 #include "led_strip.h"
 #include "lvgl.h"
-#include "display/my_disp.h"
+//#include "display/my_disp.h"
 
-#include "display/tubes.h"
+#include "display/renderer.h"
+#include "game_loop/game_loop.h"
 
 #include "lvgl.h"
 #include "bsp/esp-bsp.h"
@@ -27,7 +28,7 @@
 #include "blink/blink.h"
 #include "button/button.h"
 
-#include "audio/audio.h"
+//#include "audio/audio.h"
 
 
 /* Buffer for reading/writing to I2S driver. Same length as SPIFFS buffer and I2S buffer, for optimal read/write performance.
@@ -308,8 +309,8 @@ void app_main(void)
     spiffs_init();
 
     /* Needed from random RGB LED color generation */
-    time_t t;
-    srand((unsigned) time(&t));
+    //time_t t;
+    //srand((unsigned) time(&t));
 
     /* Create FreeRTOS tasks and queues */
     // audio_button_q = xQueueCreate(10, sizeof(uint8_t));
@@ -320,6 +321,7 @@ void app_main(void)
     bsp_display_start(); // Start LVGL and LCD driver
     //disp_init();         // Create LVGL screen and widgets
     //disp_set_volume(DEFAULT_VOLUME);
-
-    spawn_tube(true, 50);
+    create_canvas();
+    
+    xTaskCreate(game_loop_task, "game_loop_task", 4096, NULL, 5, NULL);
 }
