@@ -33,11 +33,11 @@ void blink_task() {
         
         led_strip_set_pixel(led_strip, 0, 0, 255, 0);
         led_strip_refresh(led_strip);
-        sleep_ms(500);
+        vTaskDelay(pdMS_TO_TICKS(500));
         
         led_strip_clear(led_strip);
         led_strip_refresh(led_strip);   
-        sleep_ms(500);
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 
     vTaskDelete(NULL);

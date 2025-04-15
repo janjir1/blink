@@ -323,5 +323,5 @@ void app_main(void)
     //disp_set_volume(DEFAULT_VOLUME);
     create_canvas();
     
-    xTaskCreate(game_loop_task, "game_loop_task", 4096, NULL, 5, NULL);
+    xTaskCreate(game_loop_task, "game_loop_task", 4096, NULL, 2, NULL);
 }
