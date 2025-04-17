@@ -15,6 +15,10 @@ LV_IMG_DECLARE(background);
 
 LV_IMG_DECLARE(plane);
 
+LV_IMG_DECLARE(plane_up);
+
+LV_IMG_DECLARE(plane_down);
+
 //LV_IMG_DECLARE(my_image);
 
 #ifdef __cplusplus
