@@ -112,16 +112,16 @@ void app_main(void)
     
     xTaskCreate(game_loop_task, "game_loop_task", 4096, NULL, 2, NULL);
     //xTaskCreate(game_loop_task, "game_loop_task", 4096, NULL, 5, NULL);
-    xTaskCreate(audio_loop_task, "audio_loop_task", 4096, (void *)FILE_NYAN, 10, NULL);         //VC
+    //xTaskCreate(audio_loop_task, "audio_loop_task", 4096, (void *)FILE_NYAN, 10, NULL);         //VC
 
     //VC's test call
-    delay_ms(10000);
+    //delay_ms(10000);
     //xTaskCreate(audio_set_volume, "audio_set_volume", 4096, (void *)50, 5, NULL);               //VC
-    xTaskCreate(audio_task, "audio_task", 4096, (void *)FILE_EXPLOSION, 6, NULL); //VC          //VC
+    //xTaskCreate(audio_task, "audio_task", 4096, (void *)FILE_EXPLOSION, 6, NULL); //VC          //VC
     
-    delay_ms(10000);
-    xTaskCreate(audio_set_volume, "audio_set_volume", 4096, (void *)40, 5, NULL);               //VC
-    xTaskCreate(audio_loop_task, "audio_loop_task", 4096, (void *)FILE_NYAN, 10, NULL);         //VC
+    //delay_ms(10000);
+    //xTaskCreate(audio_set_volume, "audio_set_volume", 4096, (void *)40, 5, NULL);               //VC
+    //xTaskCreate(audio_loop_task, "audio_loop_task", 4096, (void *)FILE_NYAN, 10, NULL);         //VC
 
 }
 
