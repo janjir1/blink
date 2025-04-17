@@ -1,4 +1,4 @@
-/*//#include <stdio.h>
+//#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -8,21 +8,37 @@
 
 #include "bsp/esp-bsp.h"
 #include "es8311.h"
+#include "audio.h"
 
-#include "display/my_disp.h"
-#include "button/button.h"
+#include "driver/i2s_std.h"
+//#include "esp_codec_dev.h"
+
+//#include "display/my_disp.h"
+//#include "button/button.h"
 
 
-static const char *TAG = "example";
+
+
+static const char *TAG = "audio";
 static i2s_chan_handle_t i2s_tx_chan;
 static i2s_chan_handle_t i2s_rx_chan;
 
-#define BUFFER_SIZE     (1024)
-#define SAMPLE_RATE     (22050)
-#define DEFAULT_VOLUME  (50)
-#define RECORDING_LENGTH (160)
+#define BUFFER_SIZE     (256)
+#define SAMPLE_RATE     (8000)
+#define DEFAULT_VOLUME  (50)    // 0-100
 
-extern QueueHandle_t audio_button_q;
+
+
+
+// Pointer to a file that is going to be played 
+//const char music_nyan[] = "/spiffs/nyan_16bit_mono_8khz.wav";
+//const char music_explosion[] = "/spiffs/explosion_16bit_mono_8khz.wav";
+//const char *play_filename = music_nyan;
+
+
+esp_err_t ret;
+es8311_handle_t es8311_dev;
+volatile bool g_stop_playback = false;
 
 typedef struct __attribute__((packed))
 {
@@ -36,152 +52,128 @@ typedef struct __attribute__((packed))
     uint8_t data[];
 } dumb_wav_header_t;
 
-void audio_task(void *arg)
-{
-    // Create and configure ES8311 I2C driver 
-    es8311_handle_t es8311_dev = es8311_create(BSP_I2C_NUM, ES8311_ADDRRES_0);
-    const es8311_clock_config_t clk_cfg = BSP_ES8311_SCLK_CONFIG(SAMPLE_RATE);
-    es8311_init(es8311_dev, &clk_cfg, ES8311_RESOLUTION_16, ES8311_RESOLUTION_16);
-    es8311_voice_volume_set(es8311_dev, DEFAULT_VOLUME, NULL);
 
-    // Microphone settings 
-    es8311_microphone_config(es8311_dev, false);
-    es8311_microphone_gain_set(es8311_dev, ES8311_MIC_GAIN_42DB);
+
+void audio_init(void)
+{
+    i2s_std_config_t i2s_std_config = BSP_I2S_DUPLEX_MONO_CFG(SAMPLE_RATE);
+    uint16_t mclk_mult = i2s_std_config.clk_cfg.mclk_multiple;
+
+    ESP_LOGI(TAG, "I2S_sample rate: %li", i2s_std_config.clk_cfg.sample_rate_hz);
+    ESP_LOGI(TAG, "I2S_MCLK_multiplier: %li", i2s_std_config.clk_cfg.mclk_multiple);
+    ESP_LOGI(TAG, "I2S_MCLK_freq: %li", SAMPLE_RATE * mclk_mult);
+
+    es8311_dev = es8311_create(BSP_I2C_NUM, ES8311_ADDRRES_0);
 
     // Configure I2S peripheral and Power Amplifier 
-    bsp_audio_init(NULL, &i2s_tx_chan, &i2s_rx_chan);
+    bsp_audio_init(&i2s_std_config, &i2s_tx_chan, &i2s_rx_chan);
     bsp_audio_poweramp_enable(true);
 
-    // Pointer to a file that is going to be played 
-    const char music_filename[] = "/spiffs/16bit_mono_22_05khz.wav";
-    const char recording_filename[] = "/spiffs/recording.wav";
-    const char *play_filename = music_filename;
+    // Create and configure ES8311 I2C driver 
 
-    while (1) {
-        uint8_t btn_index = 0;
-        if (xQueueReceive(audio_button_q, &btn_index, portMAX_DELAY) == pdTRUE) {
-            switch (btn_index) {
-            case BSP_BUTTON_REC: {
-                // Writing to SPIFFS from internal RAM is ~15% faster than from external SPI RAM 
-                int16_t *recording_buffer = heap_caps_malloc(BUFFER_SIZE, MALLOC_CAP_INTERNAL);
-                assert(recording_buffer != NULL);
+    const es8311_clock_config_t clk_cfg = {
+        .mclk_from_mclk_pin = true,
+        .mclk_inverted = false,
+        .sclk_inverted = false,
+        .mclk_frequency = mclk_mult * SAMPLE_RATE,
+        .sample_frequency = SAMPLE_RATE
+    };
 
-                // Open file for recording 
-                FILE *record_file = fopen(recording_filename, "wb");
-                assert(record_file != NULL);
+    /*ret = es8311_clock_config(es8311_dev, &clk_cfg, ES8311_RESOLUTION_16);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize ES8311 clock config: %s", esp_err_to_name(ret));
+        return;
+    }*/
 
-                // Write WAV file header 
-                const dumb_wav_header_t recording_header = {
-                    .bits_per_sample = 16,
-                    .data_size = RECORDING_LENGTH * BUFFER_SIZE,
-                    .num_channels = 1,
-                    .sample_rate = SAMPLE_RATE
-                };
-                if (fwrite((void *)&recording_header, 1, sizeof(dumb_wav_header_t), record_file) != sizeof(dumb_wav_header_t)) {
-                    ESP_LOGW(TAG, "Error in writting to file");
-                    continue;
-                }
 
-                disp_set_recording(true);
-                ESP_LOGI(TAG, "Recording start");
-
-                size_t bytes_written_to_spiffs = 0;
-                while (bytes_written_to_spiffs < RECORDING_LENGTH * BUFFER_SIZE) {
-                    size_t bytes_received_from_i2s;
-                    ESP_ERROR_CHECK(i2s_channel_read(i2s_rx_chan, recording_buffer, BUFFER_SIZE, &bytes_received_from_i2s, pdMS_TO_TICKS(5000)));
-
-                    // Write WAV file data 
-                    size_t data_written = fwrite(recording_buffer, 1, bytes_received_from_i2s, record_file);
-                    bytes_written_to_spiffs += data_written;
-                }
-
-                ESP_LOGI(TAG, "Recording stop, length: %i bytes", bytes_written_to_spiffs);
-                disp_set_recording(false);
-
-                fclose(record_file);
-                free(recording_buffer);
-                break;
-            }
-            case BSP_BUTTON_MODE: {
-                static bool play_recording = true;
-
-                // Switch between saved and recorded wav file 
-                play_filename = play_recording ? recording_filename : music_filename;
-                play_recording = !play_recording;
-                ESP_LOGI(TAG, "Playback file changed to %s", play_filename);
-                break;
-            }
-            case BSP_BUTTON_PLAY: {
-                int16_t *wav_bytes = malloc(BUFFER_SIZE);
-                assert(wav_bytes != NULL);
-
-                // Open WAV file 
-                ESP_LOGI(TAG, "Playing file %s", play_filename);
-                FILE *play_file = fopen(play_filename, "rb");
-                if (play_file == NULL) {
-                    ESP_LOGW(TAG, "%s file does not exist!", play_filename);
-                    break;
-                }
-
-                // Read WAV header file 
-                dumb_wav_header_t wav_header;
-                if (fread((void *)&wav_header, 1, sizeof(wav_header), play_file) != sizeof(wav_header)) {
-                    ESP_LOGW(TAG, "Error in reading file");
-                    break;
-                }
-                ESP_LOGI(TAG, "Number of channels: %d", wav_header.num_channels);
-                ESP_LOGI(TAG, "Bits per sample: %d", wav_header.bits_per_sample);
-                ESP_LOGI(TAG, "Sample rate: %d", wav_header.sample_rate);
-                ESP_LOGI(TAG, "Data size: %d", wav_header.data_size);
-
-                disp_set_playing(true);
-
-                uint32_t bytes_send_to_i2s = 0;
-                while (bytes_send_to_i2s < wav_header.data_size) {
-                    // Get data from SPIFFS
-                    size_t bytes_read_from_spiffs = fread(wav_bytes, 1, BUFFER_SIZE, play_file);
-
-                    // Send it to I2S 
-                    size_t i2s_bytes_written;
-                    ESP_ERROR_CHECK(i2s_channel_write(i2s_tx_chan, wav_bytes, bytes_read_from_spiffs, &i2s_bytes_written, pdMS_TO_TICKS(500)));
-                    bytes_send_to_i2s += i2s_bytes_written;
-                }
-
-                disp_set_playing(false);
-                fclose(play_file);
-                free(wav_bytes);
-                break;
-            }
-            case BSP_BUTTON_SET: {
-                // Wit each button SET press, toggle RGB led on/off and set random color 
-                
-
-                //xTaskCreate(move_yellow_rect_task, "YellowRectTask", 4096, NULL, 5, NULL);
-
-                break;
-            }
-            case BSP_BUTTON_VOLDOWN: {
-                int vol, vol_real;
-                es8311_voice_volume_get(es8311_dev, &vol);
-                vol -= 5;
-                es8311_voice_volume_set(es8311_dev, vol, &vol_real);
-                disp_set_volume(vol);
-                ESP_LOGI(TAG, "Volume Down: %i", vol_real);
-                break;
-            }
-            case BSP_BUTTON_VOLUP: {
-                int vol, vol_real;
-                es8311_voice_volume_get(es8311_dev, &vol);
-                vol += 5;
-                es8311_voice_volume_set(es8311_dev, vol, &vol_real);
-                disp_set_volume(vol);
-                ESP_LOGI(TAG, "Volume Up: %i", vol_real);
-                break;
-            }
-            default:
-                ESP_LOGW(TAG, "Button index out of range");
-            }
-        }
+    ret = es8311_init(es8311_dev, &clk_cfg, ES8311_RESOLUTION_16, ES8311_RESOLUTION_16);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize ES8311: %s", esp_err_to_name(ret));
+        return;
+    }
+    
+    // Set default volume
+    ret = es8311_voice_volume_set(es8311_dev, DEFAULT_VOLUME, NULL);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set default volume: %s", esp_err_to_name(ret));
     }
 }
-*/
+
+void audio_play(const char *play_filename)
+{
+    g_stop_playback = false;  // Reset flag on new playback
+    int16_t *wav_bytes = malloc(BUFFER_SIZE);
+    assert(wav_bytes != NULL);
+
+    // Open WAV file 
+    ESP_LOGI(TAG, "Playing file %s", play_filename);
+    FILE *play_file = fopen(play_filename, "rb");
+    if (play_file == NULL) {
+        ESP_LOGW(TAG, "%s file does not exist!", play_filename);
+    }
+
+    // Read WAV header file 
+    dumb_wav_header_t wav_header;
+    if (fread((void *)&wav_header, 1, sizeof(wav_header), play_file) != sizeof(wav_header)) {
+        ESP_LOGW(TAG, "Error in reading file");
+    }
+    /*
+    ESP_LOGI(TAG, "Number of channels: %d", wav_header.num_channels);
+    ESP_LOGI(TAG, "Bits per sample: %d", wav_header.bits_per_sample);
+    ESP_LOGI(TAG, "Sample rate: %d", wav_header.sample_rate);
+    ESP_LOGI(TAG, "Data size: %d", wav_header.data_size);
+    */
+
+    uint32_t bytes_send_to_i2s = 0;
+    while (bytes_send_to_i2s < wav_header.data_size && !g_stop_playback) {
+        // Get data from SPIFFS
+        size_t bytes_read_from_spiffs = fread(wav_bytes, 1, BUFFER_SIZE, play_file);
+
+        // Send it to I2S 
+        size_t i2s_bytes_written;
+        ESP_ERROR_CHECK(i2s_channel_write(i2s_tx_chan, wav_bytes, bytes_read_from_spiffs, &i2s_bytes_written, pdMS_TO_TICKS(500)));
+        bytes_send_to_i2s += i2s_bytes_written;
+    }
+
+    fclose(play_file);
+    free(wav_bytes);
+    ESP_LOGI(TAG, "Finnished playing file");
+    if (g_stop_playback)
+    {
+        g_stop_playback = false; // Reset flag if playback was stopped
+        ESP_LOGI(TAG, "Playback stopped by user");
+        vTaskDelete(NULL); // Delete task if playback was stopped
+    }
+    //g_stop_playback = false; // Reset flag after playback
+}
+
+// Set volume to 0-100%
+void audio_set_volume(void * volume)
+{
+    esp_err_t ret = es8311_voice_volume_set(es8311_dev, (int)volume, NULL);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set volume: %s", esp_err_to_name(ret));
+    }
+    vTaskDelete(NULL); // Delete task after setting volume
+}
+
+
+void audio_loop_task(void * FILE_param)
+{
+    FileID file_id = (FileID)FILE_param; // Cast back to FileID
+    while (1) {
+        audio_play(file_paths[file_id]);
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+}
+
+void audio_task(void * FILE_param)
+{
+    g_stop_playback = true; // Stop any previous playback
+    while (g_stop_playback) {
+        vTaskDelay(pdMS_TO_TICKS(1)); // Wait for the previous playback to stop
+    }
+    FileID file_id = (FileID)FILE_param; // Cast back to FileID
+    audio_play(file_paths[file_id]);
+    vTaskDelete(NULL); // Delete task after playing the file
+}
