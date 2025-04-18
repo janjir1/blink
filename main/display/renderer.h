@@ -10,8 +10,8 @@
 
 
 
-void create_canvas(void);
-void render_scene(void);
+void renderer_create_canvas(void);
+void renderer_render_scene(void);
 
 
 

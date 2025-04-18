@@ -87,7 +87,7 @@ void app_main(void)
 {
 
     button_init();
-    xTaskCreate(blink_task, "led_blink", 2048, NULL, 1, NULL);
+    //xTaskCreate(blink_task, "led_blink", 2048, NULL, 1, NULL);
 
     // Init board peripherals
         // audio:
@@ -108,7 +108,7 @@ void app_main(void)
     bsp_display_start(); // Start LVGL and LCD driver
     //disp_init();         // Create LVGL screen and widgets
     //disp_set_volume(DEFAULT_VOLUME);
-    create_canvas();
+    renderer_create_canvas();
     
     xTaskCreate(game_loop_task, "game_loop_task", 4096, NULL, 2, NULL);
     //xTaskCreate(game_loop_task, "game_loop_task", 4096, NULL, 5, NULL);

@@ -7,7 +7,7 @@
 #include "esp_timer.h"
 #include  <inttypes.h>
 
-#define FRAME_TIME 50
+#define FRAME_TIME 25
 
 void update_tubes(int8_t speed){
     for (int i = 0; i < NUM_TUBES; i++) {
@@ -24,6 +24,10 @@ void change_plane(uint8_t plane_type){
     else if (plane_type == PLANE_UP) plane_inst.image = plane_images[PLANE_UP];
 }
 
+void set_score(char *buffer){
+    text_inst.text = buffer; 
+}
+
 void game_loop_task() {
     uint8_t counter = 0;
     uint64_t start = 0;
@@ -33,13 +37,17 @@ void game_loop_task() {
         start = esp_timer_get_time();
         change_plane(counter/100);
         counter++;
-        update_tubes(5);
-        render_scene(); 
+        update_tubes(2);
+        static char buffer[32];
+        snprintf(buffer, sizeof(buffer), "Score: %u", counter);
+        set_score(buffer);
+
+        renderer_render_scene(); 
         end = esp_timer_get_time();  
 
 
-        if(((end - start) / 1000.0) > 60){
-            delay = 10;
+        if(((end - start) / 1000.0) > FRAME_TIME - 5){
+            delay = 5;
         }
         else{
              delay = FRAME_TIME - ((end - start) / 1000.0);
