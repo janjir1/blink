@@ -123,8 +123,8 @@ void app_main(void)
     //xTaskCreate(audio_task, "audio_task", 4096, (void *)FILE_EXPLOSION, 6, NULL); //VC          //VC
     
     //delay_ms(10000);
-    //xTaskCreate(audio_set_volume, "audio_set_volume", 4096, (void *)40, 5, NULL);               //VC
-    //xTaskCreate(audio_loop_task, "audio_loop_task", 4096, (void *)FILE_NYAN, 10, NULL);         //VC
+    xTaskCreate(audio_set_volume, "audio_set_volume", 4096, (void *)70, 5, NULL);               //VC
+    xTaskCreate(audio_loop_task, "audio_loop_task", 4096, (void *)FILE_NYAN, 10, NULL);         //VC
 
 }
 
