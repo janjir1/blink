@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "esp_spiffs.h"
 
 #include "bsp/esp-bsp.h"
@@ -86,8 +87,10 @@ static esp_err_t spiffs_init(void)      //file system init
 void app_main(void)
 {
 
+    srand((uint32_t)esp_timer_get_time());
+
     button_init();
-    //xTaskCreate(blink_task, "led_blink", 2048, NULL, 1, NULL);
+    xTaskCreate(blink_task, "led_blink", 2048, NULL, 1, NULL);
 
     // Init board peripherals
         // audio:

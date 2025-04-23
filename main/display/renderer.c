@@ -80,7 +80,7 @@ void IRAM_ATTR renderer_render_scene(void)
     uint16_t y_end = y_start + PLANE_HEIGH + 10;
 
     uint16_t x_start = plane_inst.x_position;
-    uint16_t copy_width = PLANE_WIDTH*2;
+    uint16_t copy_width = PLANE_WIDTH*3;
     uint16_t line_bytes = SCREEN_WIDTH;
 
     lv_color_t* dst = canvas_buf + y_start * line_bytes + x_start;
@@ -93,10 +93,10 @@ void IRAM_ATTR renderer_render_scene(void)
     }
     ///// text
     y_start = text_inst.y;
-    y_end = y_start + 15;
+    y_end = y_start + 128;
 
-    x_start = text_inst.x + 45; //adjust this if text is overwriting itself
-    copy_width = 64;
+    x_start = text_inst.x + 0; //adjust this if text is overwriting itself
+    copy_width = 128;
     line_bytes = SCREEN_WIDTH;
 
     dst = canvas_buf + y_start * line_bytes + x_start;

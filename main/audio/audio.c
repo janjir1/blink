@@ -52,8 +52,6 @@ typedef struct __attribute__((packed))
     uint8_t data[];
 } dumb_wav_header_t;
 
-
-
 void audio_init(void)
 {
     i2s_std_config_t i2s_std_config = BSP_I2S_DUPLEX_MONO_CFG(SAMPLE_RATE);
@@ -98,7 +96,6 @@ void audio_init(void)
         ESP_LOGE(TAG, "Failed to set default volume: %s", esp_err_to_name(ret));
     }
 }
-
 void audio_play(const char *play_filename)
 {
     g_stop_playback = false;  // Reset flag on new playback
@@ -175,5 +172,15 @@ void audio_task(void * FILE_param)
     }
     FileID file_id = (FileID)FILE_param; // Cast back to FileID
     audio_play(file_paths[file_id]);
+    vTaskDelete(NULL); // Delete task after playing the file
+}
+
+
+void audio_play_explosion(void*) {
+
+    es8311_voice_volume_set(es8311_dev, 100, NULL);
+    FileID file_id = (FileID)FILE_EXPLOSION; // Cast back to FileID
+    audio_play(file_paths[file_id]);
+
     vTaskDelete(NULL); // Delete task after playing the file
 }

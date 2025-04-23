@@ -8,8 +8,6 @@
 #define SCREEN_WIDTH    320
 #define SCREEN_HEIGHT   240
 
-
-
 void renderer_create_canvas(void);
 void renderer_render_scene(void);
 

@@ -17,7 +17,6 @@ enum button_t {
     BUTTON_VOLDOWN = BSP_BUTTON_VOLDOWN,
     BUTTON_VOLUP = BSP_BUTTON_VOLUP,
     BUTTON_NUM = BSP_BUTTON_NUM
-
 };
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------

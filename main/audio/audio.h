@@ -26,6 +26,8 @@ void audio_task(void * FILE);
 void audio_set_volume(void * FILE);
 void audio_init(void);
 
+void audio_play_explosion(void*);
+
 #ifdef __cplusplus
 }
 #endif
