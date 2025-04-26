@@ -19,6 +19,15 @@ LV_IMG_DECLARE(plane_up);
 
 LV_IMG_DECLARE(plane_down);
 
+LV_IMG_DECLARE(plane_bum);
+
+LV_IMG_DECLARE(plane_fall);
+
+
+LV_IMG_DECLARE(background2);
+
+LV_IMG_DECLARE(tube_bottom2);
+
 //LV_IMG_DECLARE(my_image);
 
 #ifdef __cplusplus

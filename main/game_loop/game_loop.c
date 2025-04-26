@@ -8,7 +8,7 @@
 #include "esp_timer.h"
 #include  <inttypes.h>
 
-#define FRAME_TIME 25
+#define FRAME_TIME 33
 
 void update_tubes(int8_t speed) {
 
@@ -38,6 +38,8 @@ void change_plane(uint8_t plane_type){
     if (plane_type == PLANE) plane_inst.image = plane_images[PLANE];
     else if (plane_type == PLANE_DOWN) plane_inst.image = plane_images[PLANE_DOWN];
     else if (plane_type == PLANE_UP) plane_inst.image = plane_images[PLANE_UP];
+    else if (plane_type == PLANE_BUM) plane_inst.image = plane_images[PLANE_BUM];
+    else if (plane_type == PLANE_FALL) plane_inst.image = plane_images[PLANE_FALL];
 }
 
 void set_score(char *buffer){
@@ -52,6 +54,10 @@ void game_loop_task() {
     bool engine_stall = false;
     bool explosion_sound_played = false;
     bool sound_on = true;
+    bool optimize_renderer = true;
+    bool hard_mode = false;
+
+    uint64_t delay = 0;
 
     while (1) {
 
@@ -61,6 +67,7 @@ void game_loop_task() {
 
         bool tower_hit = false;
         bool bird_hit = false;
+        
 
         bool above_tower = false;
         static bool prev_above_tower = false;
@@ -81,7 +88,10 @@ void game_loop_task() {
     
                         // collapse tower
                         if (plane_inst.y_position < 300) plane_inst.y_position++;
-                        if (tubes[i].y_position < 300) tubes[i].y_position++;
+                        if (tubes[i].y_position < 300){
+                            optimize_renderer = false;
+                            tubes[i].y_position++;
+                        }
 
                         if (!explosion_sound_played) {
 
@@ -118,12 +128,12 @@ void game_loop_task() {
         if (tower_hit) {
 
             // JANJIŘÍ ZMĚNÍ LETADLO NA VYBUCHLÉ TADY
-            change_plane(PLANE);
+            change_plane(PLANE_BUM);
 
         } else if (engine_stall) {
 
             // JANJIŘÍ TOTO LETADLO VYMĚNÍ ZA LETADLO NAKLONĚNÉ NAHORU S KOUŘEM Z MOTORU
-            change_plane(PLANE_UP);
+            change_plane(PLANE_FALL);
             plane_inst.y_position += 1;
 
         } else {
@@ -144,23 +154,41 @@ void game_loop_task() {
 
         if (button_is_pressed(BUTTON_REC, true)) sound_on = !sound_on;
 
+
+        //---- CHANGE GRAPHICS ------------------------------------------------------------------------------------------------------------------------------------------
+        if (button_is_pressed(BUTTON_PLAY, true)){
+            if (hard_mode){
+                for(uint8_t i=0; i<NUM_TUBES; i+=2) tubes[i].image = &tube_bottom2;
+                background_image = &background2;     
+            }
+            else{
+                for(uint8_t i=0; i<NUM_TUBES; i+=2) tubes[i].image = &tube_bottom;
+                background_image = &background; 
+            }
+            hard_mode = !hard_mode;
+            renderer_update_background();
+                  
+        }
+        
+
         //---- TUBE MOVEMENT --------------------------------------------------------------------------------------------------------------------------------------------
 
         if (!tower_hit) update_tubes((score_counter / 10 + 1) * (button_is_pressed(BUTTON_SET, false) * !engine_stall + 1));
 
         //---- RENDER SCENE ---------------------------------------------------------------------------------------------------------------------------------------------
 
-        char buffer[32];
+        char buffer[64];
 
-        // JANEJIŘÍ, tady by bylo lepší ukazovat ikonku na opačné straně displeje když je zvuk vypnutý
-        if (sound_on) snprintf(buffer, sizeof(buffer), "%u", score_counter);
-        else snprintf(buffer, sizeof(buffer), "(X) %u", score_counter);
+        uint8_t volume = 100;
+
+        snprintf(buffer, sizeof(buffer), "Score: %-15u %ums          Volume:%d", score_counter, FRAME_TIME-delay, volume);
+
         set_score(buffer);
 
-        renderer_render_scene(); 
+        renderer_render_scene(optimize_renderer); 
 
         uint64_t end = esp_timer_get_time();  
-        uint64_t delay;
+        
 
         if (((end - start) / 1000) > FRAME_TIME - 5) delay = 5;
         else delay = FRAME_TIME - ((end - start) / 1000);

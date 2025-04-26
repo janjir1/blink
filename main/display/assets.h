@@ -23,14 +23,25 @@ typedef struct {
     const lv_img_dsc_t *image;
 } tube_t;
 
+
+
 typedef enum {
     PLANE,
     PLANE_UP,
     PLANE_DOWN,
+    PLANE_BUM,
+    PLANE_FALL,
     PLANE_IMAGE_COUNT 
 } planeImageType;
 
+typedef enum {
+    NORMAL,
+    HARD,
+    background_IMAGE_COUNT 
+} backgroundImageType;
+
 extern const lv_img_dsc_t* plane_images[];
+extern const lv_img_dsc_t* background_images[];
 
 extern tube_t tubes[NUM_TUBES];
 
@@ -43,3 +54,5 @@ typedef struct {
 } text_t;  
 
 extern text_t text_inst;
+
+extern const lv_img_dsc_t* background_image;

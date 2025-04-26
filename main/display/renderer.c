@@ -9,11 +9,13 @@
 #include "esp_heap_caps.h"
 #include "esp_cache.h"
 
-#define line 320
+#define BLACK_HEIGHT 20
 
 
 lv_draw_img_dsc_t draw_dsc;
 lv_draw_label_dsc_t label_dsc;
+lv_draw_rect_dsc_t rect_dsc;
+
 static lv_obj_t *canvas = NULL;
 
 
@@ -40,32 +42,60 @@ void renderer_create_canvas(void)
 
     lv_draw_img_dsc_init(&draw_dsc);
 
-    lv_canvas_draw_img(canvas, 0, 0, &background, &draw_dsc);
+    lv_canvas_draw_img(canvas, 0, 0, background_image, &draw_dsc);
+    
     memcpy(canvas_cache, canvas_buf, sizeof(canvas_buf));
 
-    lv_draw_label_dsc_init(&label_dsc);               /* Default styling */ //:contentReference[oaicite:0]{index=0}
-    label_dsc.color = lv_color_white();                /* White text */     
-    label_dsc.font  = &lv_font_montserrat_14;          /* 14 px Montserrat */ 
+    lv_draw_label_dsc_init(&label_dsc);               
+    label_dsc.color = lv_color_white();                  
+    label_dsc.font  = &lv_font_montserrat_14;        
+
+    
+    lv_draw_rect_dsc_init(&rect_dsc);
+    rect_dsc.bg_color = lv_color_black();
+    rect_dsc.bg_opa = LV_OPA_COVER;  // Fully opaque
 }
+
+void renderer_update_background(void){
+
+    lv_canvas_draw_img(canvas, 0, 0, background_image, &draw_dsc);
+    memcpy(canvas_cache, canvas_buf, sizeof(canvas_buf));
+
+}
+
 
 static void draw_text_and_number(lv_coord_t x, lv_coord_t y, const char *text)
 {
-    /* 1) Prepare a small buffer for the number string */
-    //char num_buf[16];
-    //lv_snprintf(num_buf, sizeof(num_buf), "%ld", (long)number);
+    // Create rectangle descriptor
 
-    /* 3) Draw the static text */
+    
+    // Draw black rectangle at the top
+    lv_canvas_draw_rect(canvas, 0, 0, SCREEN_WIDTH, BLACK_HEIGHT, &rect_dsc);
+    
+    // Draw text (on top of the rectangle)
     lv_canvas_draw_text(canvas,
-    x, y,
-    200, 
-    &label_dsc,
-    text);      
-
-
+        x, y,
+        SCREEN_WIDTH*2, 
+        &label_dsc,
+        text);
 }
 
 
-void IRAM_ATTR renderer_render_scene(void)
+void copy_canvas_section(uint16_t y_start, uint16_t y_end_offset, uint16_t x_start, uint16_t copy_width) {
+    
+    lv_color_t* dst = canvas_buf + y_start * SCREEN_WIDTH + x_start;
+    lv_color_t* src = canvas_cache + y_start * SCREEN_WIDTH + x_start;
+    uint16_t y_end = y_start + y_end_offset;
+
+    for(uint16_t j = y_start; j <= y_end; j++) {
+        memcpy(dst, src, copy_width);
+        dst += SCREEN_WIDTH;
+        src += SCREEN_WIDTH;
+    }
+}
+
+
+void IRAM_ATTR renderer_render_scene(bool optimize)
 {
     
     
@@ -76,70 +106,53 @@ void IRAM_ATTR renderer_render_scene(void)
 
     //lv_canvas_draw_img(canvas, 0, 0, &background, &draw_dsc); //30ms
     ///// plane
-    uint16_t y_start = plane_inst.y_position;
-    uint16_t y_end = y_start + PLANE_HEIGH + 10;
-
-    uint16_t x_start = plane_inst.x_position;
-    uint16_t copy_width = PLANE_WIDTH*3;
-    uint16_t line_bytes = SCREEN_WIDTH;
-
-    lv_color_t* dst = canvas_buf + y_start * line_bytes + x_start;
-    lv_color_t* src = canvas_cache + y_start * line_bytes + x_start;
-
-    for(uint16_t j = y_start; j <= y_end; j++){
-        memcpy(dst, src, copy_width);
-        dst += line_bytes;
-        src += line_bytes;
-    }
-    ///// text
-    y_start = text_inst.y;
-    y_end = y_start + 128;
-
-    x_start = text_inst.x + 0; //adjust this if text is overwriting itself
-    copy_width = 128;
-    line_bytes = SCREEN_WIDTH;
-
-    dst = canvas_buf + y_start * line_bytes + x_start;
-    src = canvas_cache + y_start * line_bytes + x_start;
-
-    for(uint16_t j = y_start; j <= y_end; j++){
-        memcpy(dst, src, copy_width);
-        dst += line_bytes;
-        src += line_bytes;
-    }
-
-    lv_canvas_draw_img(canvas, plane_inst.x_position, plane_inst.y_position, plane_inst.image, &draw_dsc);
-    //// tubes
-    //15ms
-    for (int i = 0; i < NUM_TUBES; i++) {
-        if(tubes[i].x_position + TUBE_WIDTH > 0 && tubes[i].x_position - 16 <SCREEN_WIDTH){
-            if(tubes[i].x_position > 0){
-                const uint16_t y_start = (tubes[i].y_position < 0) ? 0 : (uint16_t)tubes[i].y_position;
-                const uint16_t y_end = (tubes[i].y_position + TUBE_HEIGH > SCREEN_WIDTH) ? SCREEN_WIDTH : (uint16_t)tubes[i].y_position+TUBE_HEIGH;
+    if (optimize)
+    {
+        //plane
+        copy_canvas_section(plane_inst.y_position, PLANE_HEIGH + 10, plane_inst.x_position, PLANE_WIDTH_ANGLE*2);
         
-                const uint8_t copy_width = 16;
-                const uint16_t x_start = tubes[i].x_position - copy_width/2;        
-                const uint16_t line_bytes = SCREEN_WIDTH;
-        
-                lv_color_t* dst = canvas_buf + y_start * line_bytes + x_start;
-                lv_color_t* src = canvas_cache + y_start * line_bytes + x_start;
-        
-                
 
-                for(uint16_t j = y_start; j <= y_end; j++){
-                    memcpy(dst, src, copy_width);
-                    dst += line_bytes;
-                    src += line_bytes;
+        //// tubes
+        for (int i = 0; i < NUM_TUBES; i++) { //for every tube
+            if(tubes[i].x_position + TUBE_WIDTH > 0 && tubes[i].x_position - 16 <SCREEN_WIDTH){ //thats on screen
+                const uint16_t y_start = (tubes[i].y_position < BLACK_HEIGHT) ? BLACK_HEIGHT : (uint16_t)tubes[i].y_position;
+                const uint16_t y_end = (tubes[i].y_position + TUBE_HEIGH > SCREEN_HEIGHT) ? SCREEN_HEIGHT : (uint16_t)tubes[i].y_position+TUBE_HEIGH - y_start;
+
+                if (!(i & 1)) { //full transparency for birds
+            
+                    copy_canvas_section(y_start, y_end, tubes[i].x_position - 8, 16);
                 }
-            }
+                else{
 
+                    copy_canvas_section(y_start, y_end, tubes[i].x_position-8, TUBE_WIDTH*2+8);
+                }             
+            }
+        }
+
+        lv_canvas_draw_img(canvas, plane_inst.x_position, plane_inst.y_position, plane_inst.image, &draw_dsc);
+
+        for (int i = 0; i < NUM_TUBES; i++) {
             lv_canvas_draw_img(canvas, tubes[i].x_position, tubes[i].y_position, tubes[i].image, &draw_dsc);
         }
+
+        draw_text_and_number(text_inst.x, text_inst.y, text_inst.text);
     }
 
+    else{
+        lv_canvas_draw_img(canvas, 0, 0, background_image, &draw_dsc);
 
-    draw_text_and_number(text_inst.x, text_inst.y, text_inst.text);
+        //tubes
+        for (int i = 0; i < NUM_TUBES; i++) {
+            lv_canvas_draw_img(canvas, tubes[i].x_position, tubes[i].y_position, tubes[i].image, &draw_dsc);
+        }
 
+        // plane
+        lv_canvas_draw_img(canvas, plane_inst.x_position, plane_inst.y_position, plane_inst.image, &draw_dsc);
+
+        // text
+        draw_text_and_number(text_inst.x, text_inst.y, text_inst.text);
+
+    }
 
     lv_task_handler();  //20ms
     bsp_display_unlock();

@@ -9,7 +9,8 @@
 #define SCREEN_HEIGHT   240
 
 void renderer_create_canvas(void);
-void renderer_render_scene(void);
+void renderer_render_scene(bool optimize);
+void renderer_update_background(void);
 
 
 
