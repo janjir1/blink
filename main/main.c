@@ -93,10 +93,10 @@ void app_main(void)
     xTaskCreate(blink_task, "led_blink", 2048, NULL, 1, NULL);
 
     // Init board peripherals
-        // audio:
-        bsp_i2c_init(); // Used by ES8311 driver
-        audio_init();   // VC
-        spiffs_init();
+    // audio:
+    bsp_i2c_init(); // Used by ES8311 driver
+    audio_init();   // VC
+    spiffs_init();
 
     /* Needed from random RGB LED color generation */
     //time_t t;
@@ -114,17 +114,5 @@ void app_main(void)
     renderer_create_canvas();
     
     xTaskCreate(game_loop_task, "game_loop_task", 4096, NULL, 2, NULL);
-    //xTaskCreate(game_loop_task, "game_loop_task", 4096, NULL, 5, NULL);
-    //xTaskCreate(audio_loop_task, "audio_loop_task", 4096, (void *)FILE_NYAN, 10, NULL);         //VC
-
-    //VC's test call
-    //delay_ms(10000);
-    //xTaskCreate(audio_set_volume, "audio_set_volume", 4096, (void *)50, 5, NULL);               //VC
-    //xTaskCreate(audio_task, "audio_task", 4096, (void *)FILE_EXPLOSION, 6, NULL); //VC          //VC
-    
-    //delay_ms(10000);
-    xTaskCreate(audio_set_volume, "audio_set_volume", 4096, (void *)70, 5, NULL);               //VC
-    xTaskCreate(audio_loop_task, "audio_loop_task", 4096, (void *)FILE_NYAN, 10, NULL);         //VC
-
 }
 

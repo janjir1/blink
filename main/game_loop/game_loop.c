@@ -9,6 +9,7 @@
 #include  <inttypes.h>
 
 #define FRAME_TIME 33
+static const char *game_loop_TAG = "game_loop";
 
 void update_tubes(int8_t speed) {
 
@@ -53,11 +54,17 @@ void game_loop_task() {
 
     bool engine_stall = false;
     bool explosion_sound_played = false;
-    bool sound_on = true;
     bool optimize_renderer = true;
     bool hard_mode = false;
+    bool the_end = false;
 
     uint64_t delay = 0;
+    uint64_t render_time = 0;
+
+    uint8_t volume = DEFAULT_VOLUME;
+
+    // start background sound
+    xTaskCreate(audio_loop_task, "audio_loop_task", 4096, (void *)FILE_NYAN, 10, NULL);
 
     while (1) {
 
@@ -87,15 +94,26 @@ void game_loop_task() {
                         engine_stall = false;
     
                         // collapse tower
-                        if (plane_inst.y_position < 300) plane_inst.y_position++;
-                        if (tubes[i].y_position < 300){
+                        if (plane_inst.y_position < SCREEN_HEIGHT || tubes[i].y_position < SCREEN_HEIGHT)
+                        {
                             optimize_renderer = false;
-                            tubes[i].y_position++;
+                            if (plane_inst.y_position < SCREEN_HEIGHT) plane_inst.y_position+=2;
+                            if (tubes[i].y_position < SCREEN_HEIGHT) tubes[i].y_position+=2;
+                        }
+                        else {                            
+                            the_end = true;
+                            ESP_LOGI(game_loop_TAG, "Game over! Score: %u", score_counter);
+                            break;
                         }
 
                         if (!explosion_sound_played) {
 
-                            if (sound_on) xTaskCreate(audio_play_explosion, "explosion_task", 4096, NULL, 2, NULL);
+                            if (volume > 0)
+                            {
+                                xTaskCreate(audio_set_volume, "audio_set_volume", 2048, (void *)(volume + 15), 4, NULL);
+                                vTaskDelay(pdMS_TO_TICKS(10));
+                                xTaskCreate(audio_task, "audio_task", 4096, (void *)FILE_EXPLOSION, 5, NULL);
+                            }
                             explosion_sound_played = true;
                         }
 
@@ -116,6 +134,9 @@ void game_loop_task() {
                 above_tower = true;
             }
         }
+        
+        // end the game
+        if (the_end) break;
 
         // update score
         if (prev_above_tower && !above_tower) score_counter++;
@@ -152,7 +173,17 @@ void game_loop_task() {
             }
         }
 
-        if (button_is_pressed(BUTTON_REC, true)) sound_on = !sound_on;
+        
+        if (button_is_pressed(BUTTON_REC, true) && volume < 100)
+        {
+            volume += 5;
+            xTaskCreate(audio_set_volume, "audio_set_volume", 2048, (void *)volume, 1, NULL);
+        }
+        else if (button_is_pressed(BUTTON_MODE, true) && volume > 0)
+        {
+            volume -= 5;
+            xTaskCreate(audio_set_volume, "audio_set_volume", 2048, (void *)volume, 1, NULL);
+        }
 
 
         //---- CHANGE GRAPHICS ------------------------------------------------------------------------------------------------------------------------------------------
@@ -177,21 +208,25 @@ void game_loop_task() {
 
         //---- RENDER SCENE ---------------------------------------------------------------------------------------------------------------------------------------------
 
-        char buffer[64];
+        char buffer[128];
 
-        uint8_t volume = 100;
-
-        snprintf(buffer, sizeof(buffer), "Score: %-15u %ums          Volume:%d", score_counter, FRAME_TIME-delay, volume);
+        uint8_t test = 69;
+        
+        snprintf(buffer, sizeof(buffer), "Score: %-010" PRId32 " RT: %-3" PRId64 " ms      Volume: %-3" PRId8 " %%", score_counter, render_time, volume);
+        //snprintf(buffer, sizeof(buffer), "Volume:%" PRId8 " %%", volume);
+        //ESP_LOGI(game_loop_TAG, "%d", volume);
 
         set_score(buffer);
 
         renderer_render_scene(optimize_renderer); 
 
         uint64_t end = esp_timer_get_time();  
-        
 
-        if (((end - start) / 1000) > FRAME_TIME - 5) delay = 5;
-        else delay = FRAME_TIME - ((end - start) / 1000);
+        render_time = ((end - start) / 1000);
+
+        //if (render_time > FRAME_TIME - 5) delay = render_time + FRAME_TIME;
+        if (render_time > FRAME_TIME - 5) delay = 10;
+        else delay = FRAME_TIME - render_time;
 
         //printf("delay is %" PRIu64 " ms\n", delay); 
 
@@ -199,5 +234,6 @@ void game_loop_task() {
 
         //---------------------------------------------------------------------------------------------------------------------------------------------------------------
     }
+    vTaskDelete(NULL);
 }
 

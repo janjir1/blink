@@ -25,7 +25,6 @@ static i2s_chan_handle_t i2s_rx_chan;
 
 #define BUFFER_SIZE     (256)
 #define SAMPLE_RATE     (8000)
-#define DEFAULT_VOLUME  (50)    // 0-100
 
 
 
@@ -147,7 +146,7 @@ void audio_play(const char *play_filename)
 // Set volume to 0-100%
 void audio_set_volume(void * volume)
 {
-    esp_err_t ret = es8311_voice_volume_set(es8311_dev, (int)volume, NULL);
+    esp_err_t ret = es8311_voice_volume_set(es8311_dev, (int)(intptr_t)volume, NULL);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set volume: %s", esp_err_to_name(ret));
     }
@@ -167,6 +166,7 @@ void audio_loop_task(void * FILE_param)
 void audio_task(void * FILE_param)
 {
     g_stop_playback = true; // Stop any previous playback
+    vTaskDelay(pdMS_TO_TICKS(10)); // Wait for the previous playback to stop
     while (g_stop_playback) {
         vTaskDelay(pdMS_TO_TICKS(1)); // Wait for the previous playback to stop
     }
@@ -176,9 +176,9 @@ void audio_task(void * FILE_param)
 }
 
 
-void audio_play_explosion(void*) {
+void audio_play_explosion() {
 
-    es8311_voice_volume_set(es8311_dev, 100, NULL);
+    //es8311_voice_volume_set(es8311_dev, 100, NULL);
     FileID file_id = (FileID)FILE_EXPLOSION; // Cast back to FileID
     audio_play(file_paths[file_id]);
 
